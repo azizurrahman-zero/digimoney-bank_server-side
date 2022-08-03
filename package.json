@@ -1,7 +1,6 @@
 {
   "name": "digimoney-bank-server",
   "version": "1.0.0",
-  "description": "",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
@@ -13,6 +12,16 @@
   "license": "ISC",
   "dependencies": {
     "cors": "^2.8.5",
-    "express": "^4.18.1"
-  }
+    "express": "^4.18.1",
+    "mongodb": "^4.8.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/azizurrahman-zero/digimoney-bank_server-side.git"
+  },
+  "bugs": {
+    "url": "https://github.com/azizurrahman-zero/digimoney-bank_server-side/issues"
+  },
+  "homepage": "https://github.com/azizurrahman-zero/digimoney-bank_server-side#readme",
+  "description": ""
 }
