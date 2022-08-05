@@ -22,6 +22,7 @@ async function run() {
     try {
         await client.connect();
         const usersCollection = client.db("digi_money1").collection("users");
+        const approvedUsersCollection = client.db("digi_money1").collection("approvedUsers");
 
 
         app.get("/users", async (req, res) => {
@@ -43,6 +44,33 @@ async function run() {
 
             res.send({ result });
         });
+
+        // delete from users a user
+        // app.delete('/users/:id', async (req, res) => {
+        //     const id = req.params.id;
+        //     const query = { _id: ObjectId(id) };
+        //     const result = await usersCollection.deleteOne(query);
+        //     res.send(result);
+        // })
+
+        app.get('/approvedUsers', async (req, res) => {
+            const query = {};
+            const cursor = approvedUsersCollection.find(query);
+            const users = await cursor.toArray();
+            res.send(users);
+        })
+
+        // post approved users
+        app.post('/approvedUsers', async (req, res) => {
+            const newUser = req.body;
+            const result = await approvedUsersCollection.insertOne(newUser)
+            res.send(result);
+
+        })
+
+
+
+
     } finally {
     }
 }
