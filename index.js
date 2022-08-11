@@ -56,6 +56,7 @@ async function run() {
         // delete from users a user
         app.delete('/users/:id', async (req, res) => {
             const id = req.params.id;
+            console.log(id)
             const query = { _id: ObjectId(id) };
             const result = await usersCollection.deleteOne(query);
             res.send(result);
@@ -69,15 +70,31 @@ async function run() {
         })
 
         // post approved users
-        app.post('/approvedUsers', async (req, res) => {
+        app.post('/approvedUser', async (req, res) => {
             const newUser = req.body;
             const result = await approvedUsersCollection.insertOne(newUser)
             res.send(result);
 
         })
 
-
-
+     
+      
+          app.put("/approvedUser/admin/:email", async (req, res) => {
+            const email = req.params.email;
+            const filter = { email: email };
+            const updateDoc = {
+              $set: { role: "admin" },
+            };
+            const result = await approvedUsersCollection.updateOne(filter, updateDoc);
+            res.send(result);
+          });
+          
+          app.get("/approvedUser/:id", async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: id };
+            const user = await approvedUsersCollection.findOne(query);
+            res.send(user);
+          });
 
     } finally {
     }
