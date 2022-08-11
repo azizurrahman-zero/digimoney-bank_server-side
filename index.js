@@ -83,7 +83,7 @@ async function run() {
 
     app.delete("/approvedUser/:id", async (req, res) => {
       const id = req.params.id;
-      const query = { _id: ObjectId(id) };
+      const query = { _id: id };
       const result = await approvedUsersCollection.deleteOne(query);
       res.send(result);
     });
