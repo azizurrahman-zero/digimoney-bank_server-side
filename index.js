@@ -78,7 +78,7 @@ async function run() {
         // post approved users
         app.post('/approvedUser', async (req, res) => {
             const newUser = req.body;
-         
+            console.log(newUser)
              const result = await approvedUsersCollection.insertOne(newUser)
              console.log(result)
              res.send(result);
