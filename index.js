@@ -68,6 +68,21 @@ async function run() {
             res.send(users);
         })
 
+        // get the user from search option 
+        // app.get('/search/:key', async (req, res) => {
+        //     let result = await approvedUsersCollection.find({
+        //         "$or": [
+        //             {
+        //                 displayName: { $regex: req.params.key }
+        //             },
+        //             {
+        //                 email: { $regex: req.params.key }
+        //             }
+        //         ]
+        //     })
+        //     res.send(result)
+        // })
+
         // post approved users
         app.post('/approvedUsers', async (req, res) => {
             const newUser = req.body;
