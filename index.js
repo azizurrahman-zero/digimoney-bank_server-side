@@ -19,19 +19,19 @@ const client = new MongoClient(uri, {
 });
 
 async function run() {
-  try {
-    await client.connect();
-    const usersCollection = client.db("digi_money1").collection("users");
-    const approvedUsersCollection = client
-      .db("digi_money1")
-      .collection("approvedUsers");
 
-    app.get("/users", async (req, res) => {
-      const query = {};
-      const cursor = usersCollection.find(query);
-      const users = await cursor.toArray();
-      res.send(users);
-    });
+    try {
+        await client.connect();
+        const usersCollection = client.db("digi_money1").collection("users");
+        const approvedUsersCollection = client.db("digi_money1").collection("approvedUsers");
+    //    create new user and save the user data to database 
+        app.post("/adduser", async (req, res) => {
+            const user = req.body;
+            const result = await usersCollection.insertOne(user);
+            res.send(result);
+            console.log(result)
+          });
+
 
     app.put("/user/:email", async (req, res) => {
       const email = req.params.email;
@@ -74,12 +74,14 @@ async function run() {
       res.send(users);
     });
 
+
     // post approved users
     app.post("/approvedUser", async (req, res) => {
       const newUser = req.body;
       const result = await approvedUsersCollection.insertOne(newUser);
       res.send(result);
     });
+
 
     app.delete("/approvedUser/:id", async (req, res) => {
       const id = req.params.id;
