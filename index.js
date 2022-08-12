@@ -83,6 +83,17 @@ async function run() {
              res.send(result);
 
         })
+        // Get a single user information 
+        app.patch('/user',async(req,res)=>{
+             const email=req.query.email
+             const query={email:email} 
+             const data=req.body
+             console.log(data)
+             const find= await usersCollection.findOne(query)
+             const newBalance=parseFloat(find.amount)+ 2
+             console.log(newBalance)
+             console.log("this is email",email)
+        })
 
 
 
