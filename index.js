@@ -24,6 +24,7 @@ async function run() {
         await client.connect();
         const usersCollection = client.db("digi_money1").collection("users");
         const approvedUsersCollection = client.db("digi_money1").collection("approvedUsers");
+        const usersReviewCollection = client.db("digi_money1").collection("reviews");
     //    create new user and save the user data to database 
         app.post("/adduser", async (req, res) => {
             const user = req.body;
@@ -281,6 +282,32 @@ async function run() {
       const query = { _id: id };
       const user = await approvedUsersCollection.findOne(query);
       res.send(user);
+    });
+
+
+    // ===============================================customer review ============================================//
+    // Insert review data  to database 
+    app.post("/review",async(req,res)=>{
+      const review=req.body
+      const result=await usersReviewCollection.insertOne(review)
+      res.send(result)
+      
+    })
+    //get all review data from database 
+    app.get("/review",async(req,res)=>{
+      const result=await usersReviewCollection.find({}).toArray()
+      res.send(result)
+    });
+    // ==================================================Check admin ============================================//
+    app.get("/admin", async (req, res) => {
+      const email = req.query.email;
+      const getUser = await approvedUsersCollection.findOne({ email: email });
+      if (getUser) {
+        const isAdmin = getUser.role === "admin";
+        return res.send({ admin: isAdmin });
+      } else {
+        return res.send({ admin: false });
+      }
     });
   } finally {
   }
