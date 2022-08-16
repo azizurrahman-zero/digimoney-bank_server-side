@@ -405,10 +405,10 @@ async function run() {
         const findSenderInfo = await approvedUsersCollection.findOne(
           senderinfoquery
         );
-        console.log(findSenderInfo.amount, "lol", amount);
+        
         const updateSenderAmount =
           parseFloat(findSenderInfo.amount) - parseFloat(amount);
-        console.log(updateSenderAmount);
+       
         const updatesender = {
           $set: {
             amount: updateSenderAmount,
@@ -418,7 +418,25 @@ async function run() {
           senderinfoquery,
           updatesender
         );
-        res.send(finalResult);
+
+
+        // add transection to sender  database 
+        const addTransection={
+          $push:{
+            ["transection"]:{amount:amount,receiverAccountnumber:accountNumber,staus:"complete",statustwo:"outgoing",data:new Date()}
+          }
+        }
+        const insertTransection=await approvedUsersCollection.updateOne(senderinfoquery,addTransection)
+        //add transection object to receiver database 
+        const addTransectionToReceiver={
+          $push:{
+            ["transection"]:{amount:amount,senderAccountNumber:findSenderInfo.accountNumber,staus:"complete",statustwo:"incomming",data:new Date()}
+          }
+        }
+        const insertTransectionDataToReceiver=await approvedUsersCollection.updateOne(receiverinfoquery,addTransectionToReceiver)
+       
+       
+        res.send({finalResult,insertTransectionDataToReceiver,insertTransection});
       }
     });
   } finally {
