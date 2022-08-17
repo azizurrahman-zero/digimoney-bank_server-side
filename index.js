@@ -4,6 +4,7 @@ const app = express();
 const cors = require("cors");
 app.use(cors());
 app.use(express.json());
+const nodemailer = require("nodemailer");
 
 const port = process.env.PORT || 4000;
 
@@ -19,20 +20,25 @@ const client = new MongoClient(uri, {
 });
 
 
-// ================================================= Sending email ==============================================
+// ============================================== Sending to receiver email ==============================================
 
-function informationSent() {
+function receiverMail(addTransectionToReceiver) {
 
-
+const {senderEmail,senderAccountNumber,amount,data,reciverEmail}=addTransectionToReceiver.$push.transection
         // sending mail via nodemailer
-
+       
         const msg = {
           from: 'testingdeveloper431@gmail.com', // sender address
-          to: " ", // list of receivers
-          subject: `sending information`, // Subject line
+          to: ` ${reciverEmail}`, // list of receivers
+          subject: `Money Recived from ${senderEmail}`, // Subject line
           text: "hey you got a info", // plain text body
           html: `
-          
+             <p>Hey</p></br>
+             <p>Your account has recived ${amount}$ from Account Number ${senderAccountNumber}
+             </p> </br>
+             <p>Best Regards</p> </br>
+             <p>Digi Money Bank</p>
+
           `
           
            ,
@@ -43,7 +49,7 @@ function informationSent() {
           service:'gmail',
       auth: {
         user: "testingdeveloper431@gmail.com",
-        pass: "ylfclgduvnqkevlak", 
+        pass: "ajexwpkgpewiohct", 
       },
       port: 587,
       host: "smtp.ethereal.email",
@@ -59,6 +65,54 @@ function informationSent() {
         })
 
 }
+
+// ============================================== Sending to sender email ==============================================
+
+function senderMail(addTransection) {
+
+  const {senderEmail,receiverAccountnumber,amount,data,reciverEmail}=addTransection.$push.transection
+  
+          // sending mail via nodemailer
+          // 
+          const msg = {
+            from: 'testingdeveloper431@gmail.com', // sender address
+            to: `${senderEmail}`, // list of receivers
+            subject: `Money sent to from ${reciverEmail}`, // Subject line
+            text: "hey you got a info", // plain text body
+            html: `
+               <p>Hey</p></br>
+               <p>Your account has send ${amount}$ to Account Number ${receiverAccountnumber}
+               </p> </br>
+               <p>Best Regards</p> </br>
+               <p>Digi Money Bank</p>
+  
+            `
+            
+             ,
+            
+          }
+          
+          nodemailer.createTransport({
+            service:'gmail',
+        auth: {
+          user: "testingdeveloper431@gmail.com",
+          pass: "ajexwpkgpewiohct", 
+        },
+        port: 587,
+        host: "smtp.ethereal.email",
+      
+          })
+          .sendMail(msg,(err)=>{
+            if (err) {
+              return console.log('Error occures',err);
+            }
+            else{
+              return console.log("email sent");
+            }
+          })
+  
+  }
+  
 
 
 async function run() {
@@ -423,16 +477,19 @@ async function run() {
         // add transection to sender  database 
         const addTransection={
           $push:{
-            ["transection"]:{amount:amount,receiverAccountnumber:accountNumber,staus:"complete",statustwo:"outgoing",data:new Date()}
+            ["transection"]:{amount:amount,receiverAccountnumber:accountNumber,senderEmail:findSenderInfo.email,
+            reciverEmail:findTargetedaccount.email,staus:"complete",statustwo:"outgoing",data:new Date()}
           }
         }
+        senderMail(addTransection);
         const insertTransection=await approvedUsersCollection.updateOne(senderinfoquery,addTransection)
         //add transection object to receiver database 
         const addTransectionToReceiver={
           $push:{
-            ["transection"]:{amount:amount,senderAccountNumber:findSenderInfo.accountNumber,staus:"complete",statustwo:"incomming",data:new Date()}
+            ["transection"]:{amount:amount,senderAccountNumber:findSenderInfo.accountNumber,senderEmail:findSenderInfo.email, reciverEmail:findTargetedaccount.email, staus:"complete",statustwo:"incomming",data:new Date()}
           }
         }
+        receiverMail(addTransectionToReceiver);
         const insertTransectionDataToReceiver=await approvedUsersCollection.updateOne(receiverinfoquery,addTransectionToReceiver)
        
        
