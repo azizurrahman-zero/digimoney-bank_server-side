@@ -4,6 +4,7 @@ const app = express();
 const cors = require("cors");
 app.use(cors());
 app.use(express.json());
+const nodemailer = require("nodemailer");
 
 const port = process.env.PORT || 4000;
 
@@ -17,6 +18,102 @@ const client = new MongoClient(uri, {
   useUnifiedTopology: true,
   serverApi: ServerApiVersion.v1,
 });
+
+
+// ============================================== Sending to receiver email ==============================================
+
+function receiverMail(addTransectionToReceiver) {
+
+const {senderEmail,senderAccountNumber,amount,data,reciverEmail}=addTransectionToReceiver.$push.transection
+        // sending mail via nodemailer
+       
+        const msg = {
+          from: 'testingdeveloper431@gmail.com', // sender address
+          to: ` ${reciverEmail}`, // list of receivers
+          subject: `Money Recived from ${senderEmail}`, // Subject line
+          text: "hey you got a info", // plain text body
+          html: `
+             <p>Hey</p></br>
+             <p>Your account has recived ${amount}$ from Account Number ${senderAccountNumber}
+             </p> </br>
+             <p>Best Regards</p> </br>
+             <p>Digi Money Bank</p>
+
+          `
+          
+           ,
+          
+        }
+        
+        nodemailer.createTransport({
+          service:'gmail',
+      auth: {
+        user: "testingdeveloper431@gmail.com",
+        pass: "ajexwpkgpewiohct", 
+      },
+      port: 587,
+      host: "smtp.ethereal.email",
+    
+        })
+        .sendMail(msg,(err)=>{
+          if (err) {
+            return console.log('Error occures',err);
+          }
+          else{
+            return console.log("email sent");
+          }
+        })
+
+}
+
+// ============================================== Sending to sender email ==============================================
+
+function senderMail(addTransection) {
+
+  const {senderEmail,receiverAccountnumber,amount,data,reciverEmail}=addTransection.$push.transection
+  
+          // sending mail via nodemailer
+          // 
+          const msg = {
+            from: 'testingdeveloper431@gmail.com', // sender address
+            to: `${senderEmail}`, // list of receivers
+            subject: `Money sent to from ${reciverEmail}`, // Subject line
+            text: "hey you got a info", // plain text body
+            html: `
+               <p>Hey</p></br>
+               <p>Your account has send ${amount}$ to Account Number ${receiverAccountnumber}
+               </p> </br>
+               <p>Best Regards</p> </br>
+               <p>Digi Money Bank</p>
+  
+            `
+            
+             ,
+            
+          }
+          
+          nodemailer.createTransport({
+            service:'gmail',
+        auth: {
+          user: "testingdeveloper431@gmail.com",
+          pass: "ajexwpkgpewiohct", 
+        },
+        port: 587,
+        host: "smtp.ethereal.email",
+      
+          })
+          .sendMail(msg,(err)=>{
+            if (err) {
+              return console.log('Error occures',err);
+            }
+            else{
+              return console.log("email sent");
+            }
+          })
+  
+  }
+  
+
 
 async function run() {
   try {
@@ -49,6 +146,111 @@ async function run() {
       res.send(users);
     });
 
+
+    app.put("/user/:email", async (req, res) => {
+      const email = req.params.email;
+      const user = req.body;
+      const filter = { email: email };
+      const options = { upsert: true };
+      const updateDoc = {
+        $set: user,
+      };
+      const result = await usersCollection.updateOne(
+        filter,
+        updateDoc,
+        options
+      );
+
+      res.send({ result });
+    });
+        // delete from users a user
+        app.delete('/users/:id', async (req, res) => {
+            const id = req.params.id;
+            console.log(id)
+            const query = { _id: ObjectId(id) };
+            const result = await usersCollection.deleteOne(query);
+            res.send(result);
+        })
+
+          
+
+        app.get('/approvedUsers', async (req, res) => {
+            const query = {};
+            const cursor = approvedUsersCollection.find(query);
+            const users = await cursor.toArray();
+            res.send(users);
+        })
+
+    app.get('/finduser', async(req,res)=>{
+
+        const email = req.query.email;
+
+      const result = await approvedUsersCollection.findOne({ email: email });
+      if (!result) {
+        res.send({ find: false });
+        return;
+      } else {
+        res.send(result);
+      }
+    })
+
+        // adding account number
+        app.patch("/accountNumber/:id", async (req, res) => {
+          const id = req.params.id;
+          const data = req.body;
+          const query = { _id: ObjectId(id) };
+          console.log(query);
+          console.log(data);
+          const update = {
+            $set: {
+              accountNumber:data.accountNumber
+            },
+          };
+          const result = await usersCollection.updateOne(query, update);
+          res.send(result);
+        });
+
+        // post approved users
+        app.post('/approvedUsers', async (req, res) => {
+            const newUser = req.body;
+         
+             const result = await approvedUsersCollection.insertOne(newUser)
+             console.log(result)
+             res.send(result);
+
+        })
+        // update ammount
+    app.patch("/approvedUsers/:id", async (req, res) => {
+        const id = req.params.id;
+        const updatedAmount = req.body;
+        const query = { _id: id };
+        const update = {
+          $set: {
+            amount:updatedAmount.amount
+          },
+        };
+        const result = await approvedUsersCollection.updateOne(query, update);
+        res.send(result);
+      });
+
+      
+          app.put("/approvedUsers/admin/:email", async (req, res) => {
+            const email = req.params.email;
+            const filter = { email: email };
+            const updateDoc = {
+              $set: { role: "admin" },
+            };
+            const result = await approvedUsersCollection.updateOne(filter, updateDoc);
+            res.send(result);
+          });
+          
+          app.get("/approvedUser/:id", async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: id };
+            const user = await approvedUsersCollection.findOne(query);
+            res.send(user);
+          });
+
     app.put("/user/:email", async (req, res) => {
       const email = req.params.email;
       const user = req.body;
@@ -69,7 +271,7 @@ async function run() {
     // delete from users a user
     app.delete("/users/:id", async (req, res) => {
       const id = req.params.id;
-      console.log(id);
+
       const query = { _id: ObjectId(id) };
       const result = await usersCollection.deleteOne(query);
       res.send(result);
@@ -80,18 +282,6 @@ async function run() {
       const cursor = approvedUsersCollection.find(query);
       const users = await cursor.toArray();
       res.send(users);
-    });
-
-    app.get("/finduser", async (req, res) => {
-      const email = req.query.email;
-
-      const result = await approvedUsersCollection.findOne({ email: email });
-      if (!result) {
-        res.send({ find: false });
-        return;
-      } else {
-        res.send(result);
-      }
     });
 
     // adding account number
@@ -113,7 +303,6 @@ async function run() {
     // post approved users
     app.post("/approvedUsers", async (req, res) => {
       const newUser = req.body;
-
       const result = await approvedUsersCollection.insertOne(newUser);
       console.log(result);
       res.send(result);
@@ -184,6 +373,7 @@ async function run() {
       console.log(result);
       res.send(result);
     });
+
     // Get a single user information
 
     app.get("/approvedUsers", async (req, res) => {
@@ -199,7 +389,6 @@ async function run() {
       const result = await approvedUsersCollection.insertOne(newUser);
       res.send(result);
     });
-
     app.delete("/approvedUser/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: id };
@@ -290,16 +479,19 @@ async function run() {
         // add transection to sender  database 
         const addTransection={
           $push:{
-            ["transection"]:{amount:amount,receiverAccountnumber:accountNumber,staus:"complete",statustwo:"outgoing",data:new Date()}
+            ["transection"]:{amount:amount,receiverAccountnumber:accountNumber,senderEmail:findSenderInfo.email,
+            reciverEmail:findTargetedaccount.email,staus:"complete",statustwo:"outgoing",data:new Date()}
           }
         }
+        senderMail(addTransection);
         const insertTransection=await approvedUsersCollection.updateOne(senderinfoquery,addTransection)
         //add transection object to receiver database 
         const addTransectionToReceiver={
           $push:{
-            ["transection"]:{amount:amount,senderAccountNumber:findSenderInfo.accountNumber,staus:"complete",statustwo:"incomming",data:new Date()}
+            ["transection"]:{amount:amount,senderAccountNumber:findSenderInfo.accountNumber,senderEmail:findSenderInfo.email, reciverEmail:findTargetedaccount.email, staus:"complete",statustwo:"incomming",data:new Date()}
           }
         }
+        receiverMail(addTransectionToReceiver);
         const insertTransectionDataToReceiver=await approvedUsersCollection.updateOne(receiverinfoquery,addTransectionToReceiver)
        
        
