@@ -32,6 +32,8 @@ async function run() {
       .db("digi_money1")
       .collection("transection");
 
+
+
     //    create new user and save the user data to database
     app.post("/adduser", async (req, res) => {
       const user = req.body;
