@@ -1,6 +1,7 @@
 const express = require("express");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
+const moment = require('moment')
 const cors = require("cors");
 app.use(cors());
 app.use(express.json());
@@ -136,7 +137,7 @@ async function run() {
       const user = req.body;
       const result = await usersCollection.insertOne(user);
       res.send(result);
-      console.log(result);
+   
     });
 
     app.get("/users", async (req, res) => {
@@ -166,7 +167,7 @@ async function run() {
         // delete from users a user
         app.delete('/users/:id', async (req, res) => {
             const id = req.params.id;
-            console.log(id)
+         
             const query = { _id: ObjectId(id) };
             const result = await usersCollection.deleteOne(query);
             res.send(result);
@@ -199,8 +200,7 @@ async function run() {
           const id = req.params.id;
           const data = req.body;
           const query = { _id: ObjectId(id) };
-          console.log(query);
-          console.log(data);
+    
           const update = {
             $set: {
               accountNumber:data.accountNumber
@@ -215,7 +215,7 @@ async function run() {
             const newUser = req.body;
          
              const result = await approvedUsersCollection.insertOne(newUser)
-             console.log(result)
+            
              res.send(result);
 
         })
@@ -289,8 +289,7 @@ async function run() {
       const id = req.params.id;
       const data = req.body;
       const query = { _id: ObjectId(id) };
-      console.log(query);
-      console.log(data);
+    
       const update = {
         $set: {
           accountNumber: data.accountNumber,
@@ -304,7 +303,7 @@ async function run() {
     app.post("/approvedUsers", async (req, res) => {
       const newUser = req.body;
       const result = await approvedUsersCollection.insertOne(newUser);
-      console.log(result);
+
       res.send(result);
     });
 
@@ -368,9 +367,9 @@ async function run() {
     // post approved users
     app.post("/approvedUsers", async (req, res) => {
       const newUser = req.body;
-      console.log(newUser);
+   
       const result = await approvedUsersCollection.insertOne(newUser);
-      console.log(result);
+    
       res.send(result);
     });
 
@@ -446,6 +445,7 @@ async function run() {
       const findTargetedaccount = await approvedUsersCollection.findOne(
         receiverinfoquery
       );
+      
       const updateAmount =
         parseFloat(findTargetedaccount.amount) + parseFloat(amount);
       const update = {
@@ -480,15 +480,16 @@ async function run() {
         const addTransection={
           $push:{
             ["transection"]:{amount:amount,receiverAccountnumber:accountNumber,senderEmail:findSenderInfo.email,
-            reciverEmail:findTargetedaccount.email,staus:"complete",statustwo:"outgoing",data:new Date()}
+            reciverEmail:findTargetedaccount.email,staus:"complete",statustwo:"outgoing",data:new Date(),reveiverName:findTargetedaccount.displayName}
           }
         }
         senderMail(addTransection);
         const insertTransection=await approvedUsersCollection.updateOne(senderinfoquery,addTransection)
+   
         //add transection object to receiver database 
         const addTransectionToReceiver={
           $push:{
-            ["transection"]:{amount:amount,senderAccountNumber:findSenderInfo.accountNumber,senderEmail:findSenderInfo.email, reciverEmail:findTargetedaccount.email, staus:"complete",statustwo:"incomming",data:new Date()}
+            ["transection"]:{amount:amount,senderAccountNumber:findSenderInfo.accountNumber,senderEmail:findSenderInfo.email, reciverEmail:findTargetedaccount.email, staus:"complete",statustwo:"incomming",data:new Date(),senderName:findSenderInfo.displayName}
           }
         }
         receiverMail(addTransectionToReceiver);
@@ -498,6 +499,47 @@ async function run() {
         res.send({finalResult,insertTransectionDataToReceiver,insertTransection});
       }
     });
+
+
+    // pagenation for transection history 
+    app.get("/transectionCount/:account",async(req,res)=>{
+       const accountNumber=req.params.account
+       const findDocument= await approvedUsersCollection.findOne({accountNumber:accountNumber})
+       const transectionHistory=findDocument?.transection
+       const count =transectionHistory?.length
+       if(count){
+        res.send({count})
+       }
+      
+       
+    });
+    // get all transection 
+    app.get('/transection/:account',async(req,res)=>{
+      const page=req.query.page  
+      const accountNumber=req.params.account
+      const findDocument= await approvedUsersCollection.findOne({accountNumber:accountNumber})
+      const transectionHistory=findDocument?.transection
+   
+   
+      let sortedTransection=[];
+      if(transectionHistory){
+    
+        let sorted = [...transectionHistory].sort((a,b) =>new moment(a.date).format('YYYYMMDD') - new moment(b.date).format('YYYYMMDD'))
+        sortedTransection=sorted.reverse()
+      }
+      function paginateArray(arr , itemPerPage , pageIndex) {
+        const lastIndex = itemPerPage * pageIndex;
+        const firstIndex = lastIndex - itemPerPage;
+        return arr.slice(firstIndex , lastIndex);
+    }
+    
+
+    const index=parseInt(page)  
+    const result=paginateArray(sortedTransection,10,index)
+    res.send(result)
+  
+
+    })
   } finally {
   }
 }
