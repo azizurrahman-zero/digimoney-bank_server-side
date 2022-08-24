@@ -445,6 +445,10 @@ async function run() {
       const findTargetedaccount = await approvedUsersCollection.findOne(
         receiverinfoquery
       );
+      if(!findTargetedaccount){
+        console.log("This is robin ")
+        return
+      }
       
       const updateAmount =
         parseFloat(findTargetedaccount.amount) + parseFloat(amount);
@@ -526,6 +530,12 @@ async function run() {
     
         let sorted = [...transectionHistory].sort((a,b) =>new moment(a.date).format('YYYYMMDD') - new moment(b.date).format('YYYYMMDD'))
         sortedTransection=sorted.reverse()
+      }
+      console.log(page)
+      if(page==0){
+        res.send(sortedTransection)
+     
+        return
       }
       function paginateArray(arr , itemPerPage , pageIndex) {
         const lastIndex = itemPerPage * pageIndex;
