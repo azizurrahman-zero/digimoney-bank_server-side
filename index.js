@@ -4,6 +4,7 @@ const app = express();
 const moment = require('moment')
 const cors = require("cors");
 app.use(cors());
+var jwt = require("jsonwebtoken");
 app.use(express.json());
 const nodemailer = require("nodemailer");
 
@@ -67,6 +68,26 @@ const {senderEmail,senderAccountNumber,receive_money,data,reciverEmail}=addTrans
 
 }
 
+
+//======================================== jot web token authorization for all users ===================================
+
+function verifyJWT(req, res, next) {
+  const randomToken="8a149b75e9c656863ec5345f602920b15aa57e76127697371f73780d1dd09ae1dbb24217a896e4f19a39a9b3ffad7867dc7c1ca87655125b6b28b3905082ef8c"
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return res.status(401).send({ message: "UnAuthorized access" });
+  }
+  const token = authHeader.split(" ")[1];
+  jwt.verify(token, randomToken, function (err, decoded) {
+    if (err) {
+      return res.status(403).send({ message: "Forbidden access" });
+    }
+    req.decoded = decoded;
+    next();
+  });
+}
+
+
 // ============================================== Sending to sender email ==============================================
 
 function senderMail(addTransection) {
@@ -129,8 +150,37 @@ async function run() {
     const transectionCollection = client
       .db("digi_money1")
       .collection("transection");
+    const tokenUserCollection = client
+      .db("digi_money1")
+      .collection("user");
 
 
+
+
+
+
+
+
+      //userCollection for generate web token
+      app.put("/user/:email", async (req, res) => {
+        const randomToken="8a149b75e9c656863ec5345f602920b15aa57e76127697371f73780d1dd09ae1dbb24217a896e4f19a39a9b3ffad7867dc7c1ca87655125b6b28b3905082ef8c"
+        const email = req.params.email;
+        const user = req.body;
+        const filter = { email: email };
+        const options = { upsert: true };
+        const updateDoc = {
+          $set: user,
+        };
+        const token = jwt.sign({ email: email }, randomToken, {
+          expiresIn: "7d",
+        });
+        const result = await tokenUserCollection.updateOne(
+          filter,
+          updateDoc,
+          options
+        );
+        res.send({ token });
+      });
 
     //    create new user and save the user data to database
     app.post("/adduser", async (req, res) => {
@@ -148,22 +198,7 @@ async function run() {
     });
 
 
-    app.put("/user/:email", async (req, res) => {
-      const email = req.params.email;
-      const user = req.body;
-      const filter = { email: email };
-      const options = { upsert: true };
-      const updateDoc = {
-        $set: user,
-      };
-      const result = await usersCollection.updateOne(
-        filter,
-        updateDoc,
-        options
-      );
-
-      res.send({ result });
-    });
+ 
         // delete from users a user
         app.delete('/users/:id', async (req, res) => {
             const id = req.params.id;
@@ -178,12 +213,12 @@ async function run() {
             const email=req.params.email
             const result=await approvedUsersCollection.findOne({email:email})
             if(result){
-              console.log("yes")
+            
               res.send({userexist:true})
               return
             }else{
               res.send({userexist:false})
-              console.log("no")
+            
               return
             }
            
@@ -196,7 +231,7 @@ async function run() {
             res.send(users);
         })
 
-    app.get('/finduser', async(req,res)=>{
+    app.get('/finduser',verifyJWT, async(req,res)=>{
 
         const email = req.query.email;
 
@@ -536,7 +571,7 @@ async function run() {
        
     });
     // get all transection 
-    app.get('/transection/:account',async(req,res)=>{
+    app.get('/transection/:account',verifyJWT,async(req,res)=>{
       const page=req.query.page  
       const accountNumber=req.params.account
       const findDocument= await approvedUsersCollection.findOne({accountNumber:accountNumber})
