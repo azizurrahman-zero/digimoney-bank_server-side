@@ -153,6 +153,11 @@ async function run() {
     const tokenUserCollection = client
       .db("digi_money1")
       .collection("user");
+    const blogCollection = client
+      .db("digi_money1")
+      .collection("blog");
+
+    
 
 
 
@@ -602,6 +607,14 @@ async function run() {
     res.send(result)
   
 
+    })
+
+
+
+    // =============================================================load all blogs========================================//
+    app.get("/blog",async(req,res)=>{
+      const result=await blogCollection.find({}).toArray()
+      res.send(result)
     })
   } finally {
   }
