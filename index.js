@@ -219,7 +219,7 @@ async function run() {
              res.send(result);
 
         })
-        // update ammount
+  //============================================ update ammount===========================================//
     app.patch("/approvedUsers/:id", async (req, res) => {
         const id = req.params.id;
         const updatedAmount = req.body;
@@ -232,6 +232,21 @@ async function run() {
         const result = await approvedUsersCollection.updateOne(query, update);
         res.send(result);
       });
+      // ==========================================deposite amount=========================================//
+      app.patch("/deposite/:accountnumber",async(req,res)=>{
+           const accountNumber=req.params.accountnumber 
+           const updatedAmount=req.body;
+           const query={accountNumber:accountNumber}
+           const update={
+            $set:{
+
+              amount:updatedAmount.amount
+            }
+           }
+
+           const result=await approvedUsersCollection.updateOne(query,update)
+           res.send(result)
+      })
       
   
 
