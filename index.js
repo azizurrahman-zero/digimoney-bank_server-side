@@ -1,5 +1,6 @@
 const express = require("express");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const jwt = require("jsonwebtoken");
 const app = express();
 const moment = require('moment')
 const cors = require("cors");
@@ -20,10 +21,28 @@ const client = new MongoClient(uri, {
   serverApi: ServerApiVersion.v1,
 });
 
+// ============================JWT Token ===========================
+
+function verifyJWT(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return res.status(401).send({ message: "UnAuthorized access" });
+  }
+  const token = authHeader.split(" ")[1];
+  jwt.verify(token, '335426bed56892395f2c094e46516c4a2586e6d824c4b62ab099eab0538d8959307ec9b19873eca3f8b18c73848c033015f6876ee001ad4f15b3a96f1f909338', function (err, decoded) {
+    if (err) {
+      return res.status(403).send({ message: "Forbidden access" });
+    }
+    req.decoded = decoded;
+    next();
+  });
+}
 
 // ============================================== Sending to receiver email ==============================================
 
 function receiverMail(addTransectionToReceiver) {
+
+  // sending mail via nodemailer
 
 const {senderEmail,senderAccountNumber,receive_money,data,reciverEmail}=addTransectionToReceiver.$push.transection
         // sending mail via nodemailer
@@ -40,81 +59,69 @@ const {senderEmail,senderAccountNumber,receive_money,data,reciverEmail}=addTrans
              <p>Best Regards</p> </br>
              <p>Digi Money Bank</p>
 
-          `
-          
-           ,
-          
-        }
-        
-        nodemailer.createTransport({
-          service:'gmail',
+          `,
+  };
+
+  nodemailer
+    .createTransport({
+      service: "gmail",
       auth: {
         user: "testingdeveloper431@gmail.com",
-        pass: "ajexwpkgpewiohct", 
+        pass: "ajexwpkgpewiohct",
       },
       port: 587,
       host: "smtp.ethereal.email",
-    
-        })
-        .sendMail(msg,(err)=>{
-          if (err) {
-            return console.log('Error occures',err);
-          }
-          else{
-            return console.log("email sent");
-          }
-        })
-
+    })
+    .sendMail(msg, (err) => {
+      if (err) {
+        return console.log("Error occures", err);
+      } else {
+        return console.log("email sent");
+      }
+    });
 }
 
 // ============================================== Sending to sender email ==============================================
 
 function senderMail(addTransection) {
+  const { senderEmail, receiverAccountnumber, amount, data, reciverEmail } =
+    addTransection.$push.transection;
 
-  const {senderEmail,receiverAccountnumber,amount,data,reciverEmail}=addTransection.$push.transection
-  
-          // sending mail via nodemailer
-          // 
-          const msg = {
-            from: 'testingdeveloper431@gmail.com', // sender address
-            to: `${senderEmail}`, // list of receivers
-            subject: `Money sent to from ${reciverEmail}`, // Subject line
-            text: "hey you got a info", // plain text body
-            html: `
+  // sending mail via nodemailer
+  //
+  const msg = {
+    from: "testingdeveloper431@gmail.com", // sender address
+    to: `${senderEmail}`, // list of receivers
+    subject: `Money sent to from ${reciverEmail}`, // Subject line
+    text: "hey you got a info", // plain text body
+    html: `
                <p>Hey</p></br>
                <p>Your account has send ${amount}$ to Account Number ${receiverAccountnumber}
                </p> </br>
                <p>Best Regards</p> </br>
                <p>Digi Money Bank</p>
   
-            `
-            
-             ,
-            
-          }
-          
-          nodemailer.createTransport({
-            service:'gmail',
-        auth: {
-          user: "testingdeveloper431@gmail.com",
-          pass: "ajexwpkgpewiohct", 
-        },
-        port: 587,
-        host: "smtp.ethereal.email",
-      
-          })
-          .sendMail(msg,(err)=>{
-            if (err) {
-              return console.log('Error occures',err);
-            }
-            else{
-              return console.log("email sent");
-            }
-          })
-  
-  }
-  
+            `,
+  };
 
+  nodemailer
+    .createTransport({
+      service: "gmail",
+      auth: {
+        user: "testingdeveloper431@gmail.com",
+        pass: "ajexwpkgpewiohct",
+      },
+      port: 587,
+      host: "smtp.ethereal.email",
+    })
+    .sendMail(msg, (err) => {
+      if (err) {
+        return console.log("Error occures", err);
+      } else {
+        return console.log("email sent");
+      }
+    });
+}
 
 async function run() {
   try {
@@ -147,7 +154,6 @@ async function run() {
       res.send(users);
     });
 
-
     app.put("/user/:email", async (req, res) => {
       const email = req.params.email;
       const user = req.body;
@@ -161,8 +167,27 @@ async function run() {
         updateDoc,
         options
       );
+      const token = jwt.sign(
+        { email: email },
+        '335426bed56892395f2c094e46516c4a2586e6d824c4b62ab099eab0538d8959307ec9b19873eca3f8b18c73848c033015f6876ee001ad4f15b3a96f1f909338',
+        { expiresIn: "1h" }
+      );
+      res.send({ result, token });
+    });
+    // delete from users a user
+    app.delete("/users/:id", async (req, res) => {
+      const id = req.params.id;
+      console.log(id);
+      const query = { _id: ObjectId(id) };
+      const result = await usersCollection.deleteOne(query);
+      res.send(result);
+    });
 
-      res.send({ result });
+    app.get("/approvedUsers",verifyJWT, async (req, res) => {
+      const query = {};
+      const cursor = approvedUsersCollection.find(query);
+      const users = await cursor.toArray();
+      res.send(users);
     });
         // delete from users a user
         app.delete('/users/:id', async (req, res) => {
@@ -189,16 +214,8 @@ async function run() {
            
           })
 
-        app.get('/approvedUsers', async (req, res) => {
-            const query = {};
-            const cursor = approvedUsersCollection.find(query);
-            const users = await cursor.toArray();
-            res.send(users);
-        })
-
-    app.get('/finduser', async(req,res)=>{
-
-        const email = req.query.email;
+    app.get("/finduser", async (req, res) => {
+      const email = req.query.email;
 
       const result = await approvedUsersCollection.findOne({ email: email });
       if (!result) {
@@ -207,8 +224,45 @@ async function run() {
       } else {
         res.send(result);
       }
-    })
+    });
 
+    // adding account number
+    app.patch("/accountNumber/:id", async (req, res) => {
+      const id = req.params.id;
+      const data = req.body;
+      const query = { _id: ObjectId(id) };
+      console.log(query);
+      console.log(data);
+      const update = {
+        $set: {
+          accountNumber: data.accountNumber,
+        },
+      };
+      const result = await usersCollection.updateOne(query, update);
+      res.send(result);
+    });
+
+    // post approved users
+    app.post("/approvedUsers",verifyJWT, async (req, res) => {
+      const newUser = req.body;
+
+      const result = await approvedUsersCollection.insertOne(newUser);
+      console.log(result);
+      res.send(result);
+    });
+    // update ammount
+    app.patch("/approvedUsers/:id", async (req, res) => {
+      const id = req.params.id;
+      const updatedAmount = req.body;
+      const query = { _id: id };
+      const update = {
+        $set: {
+          amount: updatedAmount.amount,
+        },
+      };
+      const result = await approvedUsersCollection.updateOne(query, update);
+      res.send(result);
+    });
         // adding account number
         app.patch("/accountNumber/:id", async (req, res) => {
           const id = req.params.id;
@@ -264,23 +318,22 @@ async function run() {
       
   
 
-      
-          app.put("/approvedUsers/admin/:email", async (req, res) => {
-            const email = req.params.email;
-            const filter = { email: email };
-            const updateDoc = {
-              $set: { role: "admin" },
-            };
-            const result = await approvedUsersCollection.updateOne(filter, updateDoc);
-            res.send(result);
-          });
-          
-          app.get("/approvedUser/:id", async (req, res) => {
-            const id = req.params.id;
-            const query = { _id: id };
-            const user = await approvedUsersCollection.findOne(query);
-            res.send(user);
-          });
+    app.put("/approvedUsers/admin/:email", async (req, res) => {
+      const email = req.params.email;
+      const filter = { email: email };
+      const updateDoc = {
+        $set: { role: "admin" },
+      };
+      const result = await approvedUsersCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
+
+    app.get("/approvedUser/:id",verifyJWT, async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: id };
+      const user = await approvedUsersCollection.findOne(query);
+      res.send(user);
+    });
 
     app.put("/user/:email", async (req, res) => {
       const email = req.params.email;
@@ -308,7 +361,7 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/approvedUsers", async (req, res) => {
+    app.get("/approvedUsers",verifyJWT, async (req, res) => {
       const query = {};
       const cursor = approvedUsersCollection.find(query);
       const users = await cursor.toArray();
@@ -339,7 +392,7 @@ async function run() {
     });
 
 
-    app.put("/approvedUsers/admin/:email", async (req, res) => {
+    app.put("/approvedUsers/admin/:email",verifyJWT, async (req, res) => {
       const email = req.params.email;
       const filter = { email: email };
       const updateDoc = {
@@ -349,7 +402,7 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/approvedUser/:id", async (req, res) => {
+    app.get("/approvedUser/:id",verifyJWT, async (req, res) => {
       const id = req.params.id;
       const query = { _id: id };
       const user = await approvedUsersCollection.findOne(query);
@@ -393,7 +446,7 @@ async function run() {
 
     // Get a single user information
 
-    app.get("/approvedUsers", async (req, res) => {
+    app.get("/approvedUsers",verifyJWT, async (req, res) => {
       const query = {};
       const cursor = approvedUsersCollection.find(query);
       const users = await cursor.toArray();
@@ -423,7 +476,7 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/approvedUser/:id", async (req, res) => {
+    app.get("/approvedUser/:id",verifyJWT, async (req, res) => {
       const id = req.params.id;
       const query = { _id: id };
       const user = await approvedUsersCollection.findOne(query);
@@ -483,10 +536,10 @@ async function run() {
         const findSenderInfo = await approvedUsersCollection.findOne(
           senderinfoquery
         );
-        
+
         const updateSenderAmount =
           parseFloat(findSenderInfo.amount) - parseFloat(amount);
-       
+
         const updatesender = {
           $set: {
             amount: updateSenderAmount,
@@ -497,6 +550,12 @@ async function run() {
           updatesender
         );
 
+        // add transection to sender  database
+    
+        senderMail(addTransection);
+     
+        //add transection object to receiver database
+    
 
         // add transection to sender  database 
         const addTransection={
@@ -515,10 +574,17 @@ async function run() {
           }
         }
         receiverMail(addTransectionToReceiver);
-        const insertTransectionDataToReceiver=await approvedUsersCollection.updateOne(receiverinfoquery,addTransectionToReceiver)
-       
-       
-        res.send({finalResult,insertTransectionDataToReceiver,insertTransection});
+        const insertTransectionDataToReceiver =
+          await approvedUsersCollection.updateOne(
+            receiverinfoquery,
+            addTransectionToReceiver
+          );
+
+        res.send({
+          finalResult,
+          insertTransectionDataToReceiver,
+          insertTransection,
+        });
       }
     });
 
