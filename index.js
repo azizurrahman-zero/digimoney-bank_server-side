@@ -25,7 +25,7 @@ const client = new MongoClient(uri, {
 
 function receiverMail(addTransectionToReceiver) {
 
-const {senderEmail,senderAccountNumber,amount,data,reciverEmail}=addTransectionToReceiver.$push.transection
+const {senderEmail,senderAccountNumber,receive_money,data,reciverEmail}=addTransectionToReceiver.$push.transection
         // sending mail via nodemailer
        
         const msg = {
@@ -35,7 +35,7 @@ const {senderEmail,senderAccountNumber,amount,data,reciverEmail}=addTransectionT
           text: "hey you got a info", // plain text body
           html: `
              <p>Hey</p></br>
-             <p>Your account has recived ${amount}$ from Account Number ${senderAccountNumber}
+             <p>Your account has recived ${receive_money}$ from Account Number ${senderAccountNumber}
              </p> </br>
              <p>Best Regards</p> </br>
              <p>Digi Money Bank</p>
@@ -219,11 +219,11 @@ async function run() {
              res.send(result);
 
         })
-        // update ammount
+  //============================================ update ammount===========================================//
     app.patch("/approvedUsers/:id", async (req, res) => {
         const id = req.params.id;
         const updatedAmount = req.body;
-        const query = { _id: id };
+        const query = { accountNumber: id };
         const update = {
           $set: {
             amount:updatedAmount.amount
@@ -232,6 +232,23 @@ async function run() {
         const result = await approvedUsersCollection.updateOne(query, update);
         res.send(result);
       });
+      // ==========================================deposite amount=========================================//
+      app.patch("/deposite/:accountnumber",async(req,res)=>{
+           const accountNumber=req.params.accountnumber 
+           const updatedAmount=req.body;
+           const query={accountNumber:accountNumber}
+           const update={
+            $set:{
+
+              amount:updatedAmount.amount
+            }
+           }
+
+           const result=await approvedUsersCollection.updateOne(query,update)
+           res.send(result)
+      })
+      
+  
 
       
           app.put("/approvedUsers/admin/:email", async (req, res) => {
@@ -307,19 +324,6 @@ async function run() {
       res.send(result);
     });
 
-    // update ammount
-    app.patch("/approvedUsers/:id", async (req, res) => {
-      const id = req.params.id;
-      const updatedAmount = req.body;
-      const query = { _id: id };
-      const update = {
-        $set: {
-          amount: updatedAmount.amount,
-        },
-      };
-      const result = await approvedUsersCollection.updateOne(query, update);
-      res.send(result);
-    });
 
     app.put("/approvedUsers/admin/:email", async (req, res) => {
       const email = req.params.email;
@@ -442,16 +446,16 @@ async function run() {
       const email = req.query.email;
       const receiverinfoquery = { accountNumber: accountNumber };
       const senderinfoquery = { email: email };
+      // find receiver account by account number
       const findTargetedaccount = await approvedUsersCollection.findOne(
         receiverinfoquery
       );
       if(!findTargetedaccount){
-        console.log("This is robin ")
-        return
+    
+        return res.send({message:"Account number did not match "})
       }
       
-      const updateAmount =
-        parseFloat(findTargetedaccount.amount) + parseFloat(amount);
+      const updateAmount =parseFloat(findTargetedaccount.amount) + parseFloat(amount);
       const update = {
         $set: {
           amount: updateAmount,
@@ -483,7 +487,7 @@ async function run() {
         // add transection to sender  database 
         const addTransection={
           $push:{
-            ["transection"]:{amount:amount,receiverAccountnumber:accountNumber,senderEmail:findSenderInfo.email,
+            ["transection"]:{send_money:amount,receiverAccountnumber:accountNumber,senderEmail:findSenderInfo.email,
             reciverEmail:findTargetedaccount.email,staus:"complete",statustwo:"outgoing",data:new Date(),reveiverName:findTargetedaccount.displayName}
           }
         }
@@ -493,7 +497,7 @@ async function run() {
         //add transection object to receiver database 
         const addTransectionToReceiver={
           $push:{
-            ["transection"]:{amount:amount,senderAccountNumber:findSenderInfo.accountNumber,senderEmail:findSenderInfo.email, reciverEmail:findTargetedaccount.email, staus:"complete",statustwo:"incomming",data:new Date(),senderName:findSenderInfo.displayName}
+            ["transection"]:{receive_money:amount,senderAccountNumber:findSenderInfo.accountNumber,senderEmail:findSenderInfo.email, reciverEmail:findTargetedaccount.email, staus:"complete",statustwo:"incomming",data:new Date(),senderName:findSenderInfo.displayName}
           }
         }
         receiverMail(addTransectionToReceiver);
@@ -531,7 +535,7 @@ async function run() {
         let sorted = [...transectionHistory].sort((a,b) =>new moment(a.date).format('YYYYMMDD') - new moment(b.date).format('YYYYMMDD'))
         sortedTransection=sorted.reverse()
       }
-      console.log(page)
+    
       if(page==0){
         res.send(sortedTransection)
      
