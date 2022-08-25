@@ -173,7 +173,21 @@ async function run() {
             res.send(result);
         })
 
-          
+          //=======================================================check approved user============================================//
+          app.get('/checkuser:email',async(req,res)=>{
+            const email=req.params.email
+            const result=await approvedUsersCollection.findOne({email:email})
+            if(result){
+              console.log("yes")
+              res.send({userexist:true})
+              return
+            }else{
+              res.send({userexist:false})
+              console.log("no")
+              return
+            }
+           
+          })
 
         app.get('/approvedUsers', async (req, res) => {
             const query = {};
