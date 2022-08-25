@@ -1,5 +1,6 @@
 const express = require("express");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+require('dotenv').config()
 const app = express();
 const moment = require("moment");
 const cors = require("cors");
@@ -70,14 +71,13 @@ function receiverMail(addTransectionToReceiver) {
 //======================================== jot web token authorization for all users ===================================
 
 function verifyJWT(req, res, next) {
-  const randomToken =
-    "8a149b75e9c656863ec5345f602920b15aa57e76127697371f73780d1dd09ae1dbb24217a896e4f19a39a9b3ffad7867dc7c1ca87655125b6b28b3905082ef8c";
+ 
   const authHeader = req.headers.authorization;
   if (!authHeader) {
     return res.status(401).send({ message: "UnAuthorized access" });
   }
   const token = authHeader.split(" ")[1];
-  jwt.verify(token, randomToken, function (err, decoded) {
+  jwt.verify(token, process.env.SECRET_KEY, function (err, decoded) {
     if (err) {
       return res.status(403).send({ message: "Forbidden access" });
     }
@@ -146,8 +146,7 @@ async function run() {
 
     //userCollection for generate web token
     app.put("/user/:email", async (req, res) => {
-      const randomToken =
-        "8a149b75e9c656863ec5345f602920b15aa57e76127697371f73780d1dd09ae1dbb24217a896e4f19a39a9b3ffad7867dc7c1ca87655125b6b28b3905082ef8c";
+   
       const email = req.params.email;
       const user = req.body;
       const filter = { email: email };
@@ -155,7 +154,7 @@ async function run() {
       const updateDoc = {
         $set: user,
       };
-      const token = jwt.sign({ email: email }, randomToken, {
+      const token = jwt.sign({ email: email }, process.env.SECRET_KEY, {
         expiresIn: "7d",
       });
       const result = await tokenUserCollection.updateOne(
