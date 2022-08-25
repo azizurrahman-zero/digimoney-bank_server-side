@@ -41,29 +41,29 @@ const {senderEmail,senderAccountNumber,receive_money,data,reciverEmail}=addTrans
              <p>Digi Money Bank</p>
 
           `
-          
-           ,
-          
-        }
-        
-        nodemailer.createTransport({
-          service:'gmail',
-      auth: {
-        user: "testingdeveloper431@gmail.com",
-        pass: "ajexwpkgpewiohct", 
-      },
-      port: 587,
-      host: "smtp.ethereal.email",
-    
-        })
-        .sendMail(msg,(err)=>{
-          if (err) {
-            return console.log('Error occures',err);
-          }
-          else{
-            return console.log("email sent");
-          }
-        })
+
+    ,
+
+  }
+
+  nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: "testingdeveloper431@gmail.com",
+      pass: "ajexwpkgpewiohct",
+    },
+    port: 587,
+    host: "smtp.ethereal.email",
+
+  })
+    .sendMail(msg, (err) => {
+      if (err) {
+        return console.log('Error occures', err);
+      }
+      else {
+        return console.log("email sent");
+      }
+    })
 
 }
 
@@ -71,16 +71,16 @@ const {senderEmail,senderAccountNumber,receive_money,data,reciverEmail}=addTrans
 
 function senderMail(addTransection) {
 
-  const {senderEmail,receiverAccountnumber,amount,data,reciverEmail}=addTransection.$push.transection
-  
-          // sending mail via nodemailer
-          // 
-          const msg = {
-            from: 'testingdeveloper431@gmail.com', // sender address
-            to: `${senderEmail}`, // list of receivers
-            subject: `Money sent to from ${reciverEmail}`, // Subject line
-            text: "hey you got a info", // plain text body
-            html: `
+  const { senderEmail, receiverAccountnumber, amount, data, reciverEmail } = addTransection.$push.transection
+
+  // sending mail via nodemailer
+  // 
+  const msg = {
+    from: 'testingdeveloper431@gmail.com', // sender address
+    to: `${senderEmail}`, // list of receivers
+    subject: `Money sent to from ${reciverEmail}`, // Subject line
+    text: "hey you got a info", // plain text body
+    html: `
                <p>Hey</p></br>
                <p>Your account has send ${amount}$ to Account Number ${receiverAccountnumber}
                </p> </br>
@@ -88,32 +88,32 @@ function senderMail(addTransection) {
                <p>Digi Money Bank</p>
   
             `
-            
-             ,
-            
-          }
-          
-          nodemailer.createTransport({
-            service:'gmail',
-        auth: {
-          user: "testingdeveloper431@gmail.com",
-          pass: "ajexwpkgpewiohct", 
-        },
-        port: 587,
-        host: "smtp.ethereal.email",
-      
-          })
-          .sendMail(msg,(err)=>{
-            if (err) {
-              return console.log('Error occures',err);
-            }
-            else{
-              return console.log("email sent");
-            }
-          })
-  
+
+    ,
+
   }
-  
+
+  nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: "testingdeveloper431@gmail.com",
+      pass: "ajexwpkgpewiohct",
+    },
+    port: 587,
+    host: "smtp.ethereal.email",
+
+  })
+    .sendMail(msg, (err) => {
+      if (err) {
+        return console.log('Error occures', err);
+      }
+      else {
+        return console.log("email sent");
+      }
+    })
+
+}
+
 
 
 async function run() {
@@ -189,16 +189,17 @@ async function run() {
            
           })
 
-        app.get('/approvedUsers', async (req, res) => {
-            const query = {};
-            const cursor = approvedUsersCollection.find(query);
-            const users = await cursor.toArray();
-            res.send(users);
-        })
 
-    app.get('/finduser', async(req,res)=>{
+    app.get('/approvedUsers', async (req, res) => {
+      const query = {};
+      const cursor = approvedUsersCollection.find(query);
+      const users = await cursor.toArray();
+      res.send(users);
+    })
 
-        const email = req.query.email;
+    app.get('/finduser', async (req, res) => {
+
+      const email = req.query.email;
 
       const result = await approvedUsersCollection.findOne({ email: email });
       if (!result) {
@@ -264,23 +265,23 @@ async function run() {
       
   
 
-      
-          app.put("/approvedUsers/admin/:email", async (req, res) => {
-            const email = req.params.email;
-            const filter = { email: email };
-            const updateDoc = {
-              $set: { role: "admin" },
-            };
-            const result = await approvedUsersCollection.updateOne(filter, updateDoc);
-            res.send(result);
-          });
-          
-          app.get("/approvedUser/:id", async (req, res) => {
-            const id = req.params.id;
-            const query = { _id: id };
-            const user = await approvedUsersCollection.findOne(query);
-            res.send(user);
-          });
+
+    app.put("/approvedUsers/admin/:email", async (req, res) => {
+      const email = req.params.email;
+      const filter = { email: email };
+      const updateDoc = {
+        $set: { role: "admin" },
+      };
+      const result = await approvedUsersCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
+
+    app.get("/approvedUser/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: id };
+      const user = await approvedUsersCollection.findOne(query);
+      res.send(user);
+    });
 
     app.put("/user/:email", async (req, res) => {
       const email = req.params.email;
@@ -337,6 +338,21 @@ async function run() {
 
       res.send(result);
     });
+
+
+    // update user profilepicture
+    app.patch("/profile/:email",async(req,res)=>{
+      const email=req.params.email;
+      const profilePicture=req.body;
+      const filter={email:email}
+      const update={
+        $set:{
+          profileImage:profilePicture.profileImg
+        }
+      }
+      const result=await approvedUsersCollection.updateOne(filter,update)
+      res.send(result)
+    })
 
 
     app.put("/approvedUsers/admin/:email", async (req, res) => {
@@ -483,10 +499,10 @@ async function run() {
         const findSenderInfo = await approvedUsersCollection.findOne(
           senderinfoquery
         );
-        
+
         const updateSenderAmount =
           parseFloat(findSenderInfo.amount) - parseFloat(amount);
-       
+
         const updatesender = {
           $set: {
             amount: updateSenderAmount,
@@ -515,10 +531,10 @@ async function run() {
           }
         }
         receiverMail(addTransectionToReceiver);
-        const insertTransectionDataToReceiver=await approvedUsersCollection.updateOne(receiverinfoquery,addTransectionToReceiver)
-       
-       
-        res.send({finalResult,insertTransectionDataToReceiver,insertTransection});
+        const insertTransectionDataToReceiver = await approvedUsersCollection.updateOne(receiverinfoquery, addTransectionToReceiver)
+
+
+        res.send({ finalResult, insertTransectionDataToReceiver, insertTransection });
       }
     });
 
