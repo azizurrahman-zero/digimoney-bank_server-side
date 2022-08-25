@@ -1,7 +1,7 @@
 const express = require("express");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
-const moment = require('moment')
+const moment = require("moment");
 const cors = require("cors");
 app.use(cors());
 var jwt = require("jsonwebtoken");
@@ -21,58 +21,57 @@ const client = new MongoClient(uri, {
   serverApi: ServerApiVersion.v1,
 });
 
-
 // ============================================== Sending to receiver email ==============================================
 
 function receiverMail(addTransectionToReceiver) {
+  const {
+    senderEmail,
+    senderAccountNumber,
+    receive_money,
+    data,
+    reciverEmail,
+  } = addTransectionToReceiver.$push.transection;
+  // sending mail via nodemailer
 
-const {senderEmail,senderAccountNumber,receive_money,data,reciverEmail}=addTransectionToReceiver.$push.transection
-        // sending mail via nodemailer
-       
-        const msg = {
-          from: 'testingdeveloper431@gmail.com', // sender address
-          to: ` ${reciverEmail}`, // list of receivers
-          subject: `Money Recived from ${senderEmail}`, // Subject line
-          text: "hey you got a info", // plain text body
-          html: `
+  const msg = {
+    from: "testingdeveloper431@gmail.com", // sender address
+    to: ` ${reciverEmail}`, // list of receivers
+    subject: `Money Recived from ${senderEmail}`, // Subject line
+    text: "hey you got a info", // plain text body
+    html: `
              <p>Hey</p></br>
              <p>Your account has recived ${receive_money}$ from Account Number ${senderAccountNumber}
              </p> </br>
              <p>Best Regards</p> </br>
              <p>Digi Money Bank</p>
 
-          `
-          
-           ,
-          
-        }
-        
-        nodemailer.createTransport({
-          service:'gmail',
+          `,
+  };
+
+  nodemailer
+    .createTransport({
+      service: "gmail",
       auth: {
         user: "testingdeveloper431@gmail.com",
-        pass: "ajexwpkgpewiohct", 
+        pass: "ajexwpkgpewiohct",
       },
       port: 587,
       host: "smtp.ethereal.email",
-    
-        })
-        .sendMail(msg,(err)=>{
-          if (err) {
-            return console.log('Error occures',err);
-          }
-          else{
-            return console.log("email sent");
-          }
-        })
-
+    })
+    .sendMail(msg, (err) => {
+      if (err) {
+        return console.log("Error occures", err);
+      } else {
+        return console.log("email sent");
+      }
+    });
 }
-
 
 //======================================== jot web token authorization for all users ===================================
 
 function verifyJWT(req, res, next) {
-  const randomToken="8a149b75e9c656863ec5345f602920b15aa57e76127697371f73780d1dd09ae1dbb24217a896e4f19a39a9b3ffad7867dc7c1ca87655125b6b28b3905082ef8c"
+  const randomToken =
+    "8a149b75e9c656863ec5345f602920b15aa57e76127697371f73780d1dd09ae1dbb24217a896e4f19a39a9b3ffad7867dc7c1ca87655125b6b28b3905082ef8c";
   const authHeader = req.headers.authorization;
   if (!authHeader) {
     return res.status(401).send({ message: "UnAuthorized access" });
@@ -87,55 +86,47 @@ function verifyJWT(req, res, next) {
   });
 }
 
-
 // ============================================== Sending to sender email ==============================================
 
 function senderMail(addTransection) {
+  const { senderEmail, receiverAccountnumber, amount, data, reciverEmail } =
+    addTransection.$push.transection;
 
-  const {senderEmail,receiverAccountnumber,amount,data,reciverEmail}=addTransection.$push.transection
-  
-          // sending mail via nodemailer
-          // 
-          const msg = {
-            from: 'testingdeveloper431@gmail.com', // sender address
-            to: `${senderEmail}`, // list of receivers
-            subject: `Money sent to from ${reciverEmail}`, // Subject line
-            text: "hey you got a info", // plain text body
-            html: `
+  // sending mail via nodemailer
+  //
+  const msg = {
+    from: "testingdeveloper431@gmail.com", // sender address
+    to: `${senderEmail}`, // list of receivers
+    subject: `Money sent to from ${reciverEmail}`, // Subject line
+    text: "hey you got a info", // plain text body
+    html: `
                <p>Hey</p></br>
                <p>Your account has send ${amount}$ to Account Number ${receiverAccountnumber}
                </p> </br>
                <p>Best Regards</p> </br>
                <p>Digi Money Bank</p>
   
-            `
-            
-             ,
-            
-          }
-          
-          nodemailer.createTransport({
-            service:'gmail',
-        auth: {
-          user: "testingdeveloper431@gmail.com",
-          pass: "ajexwpkgpewiohct", 
-        },
-        port: 587,
-        host: "smtp.ethereal.email",
-      
-          })
-          .sendMail(msg,(err)=>{
-            if (err) {
-              return console.log('Error occures',err);
-            }
-            else{
-              return console.log("email sent");
-            }
-          })
-  
-  }
-  
+            `,
+  };
 
+  nodemailer
+    .createTransport({
+      service: "gmail",
+      auth: {
+        user: "testingdeveloper431@gmail.com",
+        pass: "ajexwpkgpewiohct",
+      },
+      port: 587,
+      host: "smtp.ethereal.email",
+    })
+    .sendMail(msg, (err) => {
+      if (err) {
+        return console.log("Error occures", err);
+      } else {
+        return console.log("email sent");
+      }
+    });
+}
 
 async function run() {
   try {
@@ -150,49 +141,36 @@ async function run() {
     const transectionCollection = client
       .db("digi_money1")
       .collection("transection");
-    const tokenUserCollection = client
-      .db("digi_money1")
-      .collection("user");
-    const blogCollection = client
-      .db("digi_money1")
-      .collection("blog");
+    const tokenUserCollection = client.db("digi_money1").collection("user");
+    const blogCollection = client.db("digi_money1").collection("blog");
 
-    
-
-
-
-
-
-
-
-
-      //userCollection for generate web token
-      app.put("/user/:email", async (req, res) => {
-        const randomToken="8a149b75e9c656863ec5345f602920b15aa57e76127697371f73780d1dd09ae1dbb24217a896e4f19a39a9b3ffad7867dc7c1ca87655125b6b28b3905082ef8c"
-        const email = req.params.email;
-        const user = req.body;
-        const filter = { email: email };
-        const options = { upsert: true };
-        const updateDoc = {
-          $set: user,
-        };
-        const token = jwt.sign({ email: email }, randomToken, {
-          expiresIn: "7d",
-        });
-        const result = await tokenUserCollection.updateOne(
-          filter,
-          updateDoc,
-          options
-        );
-        res.send({ token });
+    //userCollection for generate web token
+    app.put("/user/:email", async (req, res) => {
+      const randomToken =
+        "8a149b75e9c656863ec5345f602920b15aa57e76127697371f73780d1dd09ae1dbb24217a896e4f19a39a9b3ffad7867dc7c1ca87655125b6b28b3905082ef8c";
+      const email = req.params.email;
+      const user = req.body;
+      const filter = { email: email };
+      const options = { upsert: true };
+      const updateDoc = {
+        $set: user,
+      };
+      const token = jwt.sign({ email: email }, randomToken, {
+        expiresIn: "7d",
       });
+      const result = await tokenUserCollection.updateOne(
+        filter,
+        updateDoc,
+        options
+      );
+      res.send({ token });
+    });
 
     //    create new user and save the user data to database
     app.post("/adduser", async (req, res) => {
       const user = req.body;
       const result = await usersCollection.insertOne(user);
       res.send(result);
-   
     });
 
     app.get("/users", async (req, res) => {
@@ -202,43 +180,38 @@ async function run() {
       res.send(users);
     });
 
+    // delete from users a user
+    app.delete("/users/:id", async (req, res) => {
+      const id = req.params.id;
 
- 
-        // delete from users a user
-        app.delete('/users/:id', async (req, res) => {
-            const id = req.params.id;
-         
-            const query = { _id: ObjectId(id) };
-            const result = await usersCollection.deleteOne(query);
-            res.send(result);
-        })
+      const query = { _id: ObjectId(id) };
+      const result = await usersCollection.deleteOne(query);
+      res.send(result);
+    });
 
-          //=======================================================check approved user============================================//
-          app.get('/checkuser:email',async(req,res)=>{
-            const email=req.params.email
-            const result=await approvedUsersCollection.findOne({email:email})
-            if(result){
-            
-              res.send({userexist:true})
-              return
-            }else{
-              res.send({userexist:false})
-            
-              return
-            }
-           
-          })
+    //=======================================================check approved user============================================//
+    app.get("/checkuser:email", async (req, res) => {
+      const email = req.params.email;
+      const result = await approvedUsersCollection.findOne({ email: email });
+      if (result) {
+        res.send({ userexist: true });
+        return;
+      } else {
+        res.send({ userexist: false });
 
-        app.get('/approvedUsers', async (req, res) => {
-            const query = {};
-            const cursor = approvedUsersCollection.find(query);
-            const users = await cursor.toArray();
-            res.send(users);
-        })
+        return;
+      }
+    });
 
-    app.get('/finduser',verifyJWT, async(req,res)=>{
+    app.get("/approvedUsers", async (req, res) => {
+      const query = {};
+      const cursor = approvedUsersCollection.find(query);
+      const users = await cursor.toArray();
+      res.send(users);
+    });
 
-        const email = req.query.email;
+    app.get("/finduser", verifyJWT, async (req, res) => {
+      const email = req.query.email;
 
       const result = await approvedUsersCollection.findOne({ email: email });
       if (!result) {
@@ -247,80 +220,75 @@ async function run() {
       } else {
         res.send(result);
       }
-    })
+    });
 
-        // adding account number
-        app.patch("/accountNumber/:id", async (req, res) => {
-          const id = req.params.id;
-          const data = req.body;
-          const query = { _id: ObjectId(id) };
-    
-          const update = {
-            $set: {
-              accountNumber:data.accountNumber
-            },
-          };
-          const result = await usersCollection.updateOne(query, update);
-          res.send(result);
-        });
+    // adding account number
+    app.patch("/accountNumber/:id", async (req, res) => {
+      const id = req.params.id;
+      const data = req.body;
+      const query = { _id: ObjectId(id) };
 
-        // post approved users
-        app.post('/approvedUsers', async (req, res) => {
-            const newUser = req.body;
-         
-             const result = await approvedUsersCollection.insertOne(newUser)
-            
-             res.send(result);
+      const update = {
+        $set: {
+          accountNumber: data.accountNumber,
+        },
+      };
+      const result = await usersCollection.updateOne(query, update);
+      res.send(result);
+    });
 
-        })
-  //============================================ update ammount===========================================//
+    // post approved users
+    app.post("/approvedUsers", async (req, res) => {
+      const newUser = req.body;
+
+      const result = await approvedUsersCollection.insertOne(newUser);
+
+      res.send(result);
+    });
+    //============================================ update ammount===========================================//
     app.patch("/approvedUsers/:id", async (req, res) => {
-        const id = req.params.id;
-        const updatedAmount = req.body;
-        const query = { accountNumber: id };
-        const update = {
-          $set: {
-            amount:updatedAmount.amount
-          },
-        };
-        const result = await approvedUsersCollection.updateOne(query, update);
-        res.send(result);
-      });
-      // ==========================================deposite amount=========================================//
-      app.patch("/deposite/:accountnumber",async(req,res)=>{
-           const accountNumber=req.params.accountnumber 
-           const updatedAmount=req.body;
-           const query={accountNumber:accountNumber}
-           const update={
-            $set:{
+      const id = req.params.id;
+      const updatedAmount = req.body;
+      const query = { accountNumber: id };
+      const update = {
+        $set: {
+          amount: updatedAmount.amount,
+        },
+      };
+      const result = await approvedUsersCollection.updateOne(query, update);
+      res.send(result);
+    });
+    // ==========================================deposite amount=========================================//
+    app.patch("/deposite/:accountnumber", async (req, res) => {
+      const accountNumber = req.params.accountnumber;
+      const updatedAmount = req.body;
+      const query = { accountNumber: accountNumber };
+      const update = {
+        $set: {
+          amount: updatedAmount.amount,
+        },
+      };
 
-              amount:updatedAmount.amount
-            }
-           }
+      const result = await approvedUsersCollection.updateOne(query, update);
+      res.send(result);
+    });
 
-           const result=await approvedUsersCollection.updateOne(query,update)
-           res.send(result)
-      })
-      
-  
+    app.put("/approvedUsers/admin/:email", async (req, res) => {
+      const email = req.params.email;
+      const filter = { email: email };
+      const updateDoc = {
+        $set: { role: "admin" },
+      };
+      const result = await approvedUsersCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
 
-      
-          app.put("/approvedUsers/admin/:email", async (req, res) => {
-            const email = req.params.email;
-            const filter = { email: email };
-            const updateDoc = {
-              $set: { role: "admin" },
-            };
-            const result = await approvedUsersCollection.updateOne(filter, updateDoc);
-            res.send(result);
-          });
-          
-          app.get("/approvedUser/:id", async (req, res) => {
-            const id = req.params.id;
-            const query = { _id: id };
-            const user = await approvedUsersCollection.findOne(query);
-            res.send(user);
-          });
+    app.get("/approvedUser/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: id };
+      const user = await approvedUsersCollection.findOne(query);
+      res.send(user);
+    });
 
     app.put("/user/:email", async (req, res) => {
       const email = req.params.email;
@@ -360,7 +328,7 @@ async function run() {
       const id = req.params.id;
       const data = req.body;
       const query = { _id: ObjectId(id) };
-    
+
       const update = {
         $set: {
           accountNumber: data.accountNumber,
@@ -377,7 +345,6 @@ async function run() {
 
       res.send(result);
     });
-
 
     app.put("/approvedUsers/admin/:email", async (req, res) => {
       const email = req.params.email;
@@ -425,9 +392,9 @@ async function run() {
     // post approved users
     app.post("/approvedUsers", async (req, res) => {
       const newUser = req.body;
-   
+
       const result = await approvedUsersCollection.insertOne(newUser);
-    
+
       res.send(result);
     });
 
@@ -504,12 +471,12 @@ async function run() {
       const findTargetedaccount = await approvedUsersCollection.findOne(
         receiverinfoquery
       );
-      if(!findTargetedaccount){
-    
-        return res.send({message:"Account number did not match "})
+      if (!findTargetedaccount) {
+        return res.send({ message: "Account number did not match " });
       }
-      
-      const updateAmount =parseFloat(findTargetedaccount.amount) + parseFloat(amount);
+
+      const updateAmount =
+        parseFloat(findTargetedaccount.amount) + parseFloat(amount);
       const update = {
         $set: {
           amount: updateAmount,
@@ -523,10 +490,10 @@ async function run() {
         const findSenderInfo = await approvedUsersCollection.findOne(
           senderinfoquery
         );
-        
+
         const updateSenderAmount =
           parseFloat(findSenderInfo.amount) - parseFloat(amount);
-       
+
         const updatesender = {
           $set: {
             amount: updateSenderAmount,
@@ -537,85 +504,109 @@ async function run() {
           updatesender
         );
 
-
-        // add transection to sender  database 
-        const addTransection={
-          $push:{
-            ["transection"]:{send_money:amount,receiverAccountnumber:accountNumber,senderEmail:findSenderInfo.email,
-            reciverEmail:findTargetedaccount.email,staus:"complete",statustwo:"outgoing",data:new Date(),reveiverName:findTargetedaccount.displayName}
-          }
-        }
+        // add transection to sender  database
+        const addTransection = {
+          $push: {
+            ["transection"]: {
+              send_money: amount,
+              receiverAccountnumber: accountNumber,
+              senderEmail: findSenderInfo.email,
+              reciverEmail: findTargetedaccount.email,
+              staus: "complete",
+              statustwo: "outgoing",
+              data: new Date(),
+              reveiverName: findTargetedaccount.displayName,
+            },
+          },
+        };
         senderMail(addTransection);
-        const insertTransection=await approvedUsersCollection.updateOne(senderinfoquery,addTransection)
-   
-        //add transection object to receiver database 
-        const addTransectionToReceiver={
-          $push:{
-            ["transection"]:{receive_money:amount,senderAccountNumber:findSenderInfo.accountNumber,senderEmail:findSenderInfo.email, reciverEmail:findTargetedaccount.email, staus:"complete",statustwo:"incomming",data:new Date(),senderName:findSenderInfo.displayName}
-          }
-        }
+        const insertTransection = await approvedUsersCollection.updateOne(
+          senderinfoquery,
+          addTransection
+        );
+
+        //add transection object to receiver database
+        const addTransectionToReceiver = {
+          $push: {
+            ["transection"]: {
+              receive_money: amount,
+              senderAccountNumber: findSenderInfo.accountNumber,
+              senderEmail: findSenderInfo.email,
+              reciverEmail: findTargetedaccount.email,
+              staus: "complete",
+              statustwo: "incomming",
+              data: new Date(),
+              senderName: findSenderInfo.displayName,
+            },
+          },
+        };
         receiverMail(addTransectionToReceiver);
-        const insertTransectionDataToReceiver=await approvedUsersCollection.updateOne(receiverinfoquery,addTransectionToReceiver)
-       
-       
-        res.send({finalResult,insertTransectionDataToReceiver,insertTransection});
+        const insertTransectionDataToReceiver =
+          await approvedUsersCollection.updateOne(
+            receiverinfoquery,
+            addTransectionToReceiver
+          );
+
+        res.send({
+          finalResult,
+          insertTransectionDataToReceiver,
+          insertTransection,
+        });
       }
     });
 
-
-    // pagenation for transection history 
-    app.get("/transectionCount/:account",async(req,res)=>{
-       const accountNumber=req.params.account
-       const findDocument= await approvedUsersCollection.findOne({accountNumber:accountNumber})
-       const transectionHistory=findDocument?.transection
-       const count =transectionHistory?.length
-       if(count){
-        res.send({count})
-       }
-      
-       
+    // pagenation for transection history
+    app.get("/transectionCount/:account", async (req, res) => {
+      const accountNumber = req.params.account;
+      const findDocument = await approvedUsersCollection.findOne({
+        accountNumber: accountNumber,
+      });
+      const transectionHistory = findDocument?.transection;
+      const count = transectionHistory?.length;
+      if (count) {
+        res.send({ count });
+      }
     });
-    // get all transection 
-    app.get('/transection/:account',verifyJWT,async(req,res)=>{
-      const page=req.query.page  
-      const accountNumber=req.params.account
-      const findDocument= await approvedUsersCollection.findOne({accountNumber:accountNumber})
-      const transectionHistory=findDocument?.transection
-   
-   
-      let sortedTransection=[];
-      if(transectionHistory){
-    
-        let sorted = [...transectionHistory].sort((a,b) =>new moment(a.date).format('YYYYMMDD') - new moment(b.date).format('YYYYMMDD'))
-        sortedTransection=sorted.reverse()
+    // get all transection
+    app.get("/transection/:account", verifyJWT, async (req, res) => {
+      const page = req.query.page;
+      const accountNumber = req.params.account;
+      const findDocument = await approvedUsersCollection.findOne({
+        accountNumber: accountNumber,
+      });
+      const transectionHistory = findDocument?.transection;
+
+      let sortedTransection = [];
+      if (transectionHistory) {
+        let sorted = [...transectionHistory].sort(
+          (a, b) =>
+            new moment(a.date).format("YYYYMMDD") -
+            new moment(b.date).format("YYYYMMDD")
+        );
+        sortedTransection = sorted.reverse();
       }
-    
-      if(page==0){
-        res.send(sortedTransection)
-     
-        return
+
+      if (page == 0) {
+        res.send(sortedTransection);
+
+        return;
       }
-      function paginateArray(arr , itemPerPage , pageIndex) {
+      function paginateArray(arr, itemPerPage, pageIndex) {
         const lastIndex = itemPerPage * pageIndex;
         const firstIndex = lastIndex - itemPerPage;
-        return arr.slice(firstIndex , lastIndex);
-    }
-    
+        return arr.slice(firstIndex, lastIndex);
+      }
 
-    const index=parseInt(page)  
-    const result=paginateArray(sortedTransection,10,index)
-    res.send(result)
-  
-
-    })
-
-
+      const index = parseInt(page);
+      const result = paginateArray(sortedTransection, 10, index);
+      res.send(result);
+    });
 
     // =============================================================load all blogs========================================//
-    app.get("/blog",async(req,res)=>{
-      const result=await blogCollection.find({}).toArray()
-      res.send(result)
-    })
+    app.get("/blog", async (req, res) => {
+      const result = await blogCollection.find({}).toArray();
+      res.send(result);
+    });
   } finally {
   }
 }
