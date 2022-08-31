@@ -1,6 +1,6 @@
 const express = require("express");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
-require('dotenv').config()
+require("dotenv").config();
 const app = express();
 const moment = require("moment");
 const cors = require("cors");
@@ -71,7 +71,6 @@ function receiverMail(addTransectionToReceiver) {
 //======================================== jot web token authorization for all users ===================================
 
 function verifyJWT(req, res, next) {
- 
   const authHeader = req.headers.authorization;
   if (!authHeader) {
     return res.status(401).send({ message: "UnAuthorized access" });
@@ -143,10 +142,16 @@ async function run() {
       .collection("transection");
     const tokenUserCollection = client.db("digi_money1").collection("user");
     const blogCollection = client.db("digi_money1").collection("blog");
+    const randomVisitorCollection = client
+      .db("digi_money1")
+      .collection("randomvisitor");
+    const subscribeCollection = client
+      .db("digi_money1")
+      .collection("subscribe");
+    const bankDataCollection = client.db("digi_money1").collection("bankdata");
 
     //userCollection for generate web token
     app.put("/user/:email", async (req, res) => {
-   
       const email = req.params.email;
       const user = req.body;
       const filter = { email: email };
@@ -248,6 +253,18 @@ async function run() {
     app.patch("/approvedUsers/:id", async (req, res) => {
       const id = req.params.id;
       const updatedAmount = req.body;
+      const bankInfo = await bankDataCollection.findOne({
+        _id: ObjectId("630f439efda2555ca01f5ea0"),
+      });
+      const updatedBankAmount = bankInfo.amount - updatedAmount.withdrawAmount;
+
+      const updateBank = {
+        $set: { amount: updatedBankAmount },
+      };
+      const ifUpdated = await bankDataCollection.updateOne(
+        { _id: ObjectId("630f439efda2555ca01f5ea0") },
+        updateBank
+      );
       const query = { accountNumber: id };
       const update = {
         $set: {
@@ -261,6 +278,19 @@ async function run() {
     app.patch("/deposite/:accountnumber", async (req, res) => {
       const accountNumber = req.params.accountnumber;
       const updatedAmount = req.body;
+      const bankInfo = await bankDataCollection.findOne({
+        _id: ObjectId("630f439efda2555ca01f5ea0"),
+      });
+      const updatedBankAmount = bankInfo.amount + updatedAmount.depositeAmount;
+
+      const updateBank = {
+        $set: { amount: updatedBankAmount },
+      };
+      const ifUpdated = await bankDataCollection.updateOne(
+        { _id: ObjectId("630f439efda2555ca01f5ea0") },
+        updateBank
+      );
+
       const query = { accountNumber: accountNumber };
       const update = {
         $set: {
@@ -604,6 +634,48 @@ async function run() {
     // =============================================================load all blogs========================================//
     app.get("/blog", async (req, res) => {
       const result = await blogCollection.find({}).toArray();
+      res.send(result);
+    });
+    // ==============================================================find transection by account Number=======================//
+    app.get("/findtransection:accountNumber", async (req, res) => {
+      const accountNumber = req.params.accountNumber;
+      const query = { accountNumber: accountNumber };
+      const result = await approvedUsersCollection.findOne(query);
+      const transection = result.transection.reverse();
+
+      res.send(transection);
+    });
+    // =============================================================guest data collection //bottaom banner form ==================================//
+
+    app.post("/visitordata", async (req, res) => {
+      const visitordata = req.body;
+      const { email } = visitordata;
+      const isMatch = await randomVisitorCollection.findOne({ email: email });
+      if (isMatch) {
+        res.send({ message: "email already exist " });
+        return;
+      } else {
+        const result = await randomVisitorCollection.insertOne(visitordata);
+        res.send(result);
+      }
+    });
+    app.post("/subscribe", async (req, res) => {
+      const subscribeData = req.body;
+      const { email } = subscribeData;
+      const isMatch = await subscribeCollection.findOne({ email: email });
+      if (isMatch) {
+        res.send({ message: "Already subscribed " });
+        return;
+      } else {
+        const result = await subscribeCollection.insertOne(subscribeData);
+        res.send(result);
+      }
+    });
+    // ================================================our bank info============================
+    app.get("/bankinfo", async (req, res) => {
+      const result = await bankDataCollection.findOne({
+        _id: ObjectId("630f439efda2555ca01f5ea0"),
+      });
       res.send(result);
     });
   } finally {
