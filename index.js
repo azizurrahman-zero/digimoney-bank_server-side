@@ -253,10 +253,14 @@ async function run() {
     app.patch("/approvedUsers/:id", async (req, res) => {
       const id = req.params.id;
       const updatedAmount = req.body;
+     
       const bankInfo = await bankDataCollection.findOne({
         _id: ObjectId("630f439efda2555ca01f5ea0"),
       });
+      
       const updatedBankAmount = bankInfo.amount - updatedAmount.withdrawAmount;
+      
+     
 
       const updateBank = {
         $set: { amount: updatedBankAmount },
