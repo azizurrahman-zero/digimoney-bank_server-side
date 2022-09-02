@@ -340,6 +340,21 @@ async function run() {
       res.send({ result });
     });
 
+
+    // ===========================================================profile picture update============================================//
+    app.patch("/profile/:email",async(req,res)=>{
+      const email=req.params.email;
+      const profilePicture=req.body;
+      const filter={email:email}
+      const update={
+        $set:{
+          profileImage:profilePicture.profileImg
+        }
+      }
+      const result=await approvedUsersCollection.updateOne(filter,update)
+      res.send(result)
+    })
+
     // delete from users a user
     app.delete("/users/:id", async (req, res) => {
       const id = req.params.id;
