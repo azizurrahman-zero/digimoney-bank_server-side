@@ -13,5 +13,5 @@ This is a website of an **Online Bank**. This online banking system will help us
 
 ## Links
 
-**[Live Site](https://digi-money-bank.web.app/)
+**[Live Site](https://digimoney-bank.web.app/)
  || [Client Side](https://github.com/azizurrahman-zero/digimoney-bank_client-side/)**
